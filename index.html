@@ -249,6 +249,47 @@
     .footer-contact strong { color: var(--ink); }
     .footer-contact a:hover { text-decoration: underline; text-underline-offset: 4px; }
 
+    .whatsapp-float {
+      position: fixed;
+      right: max(20px, calc(env(safe-area-inset-right) + 20px));
+      bottom: max(20px, calc(env(safe-area-inset-bottom) + 20px));
+      z-index: 15;
+      width: 60px;
+      height: 60px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #25d366;
+      color: #ffffff;
+      box-shadow: 0 10px 28px rgba(18, 22, 13, .22);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .whatsapp-float svg { width: 31px; height: 31px; fill: currentColor; }
+    .whatsapp-float::before {
+      content: "Chat with us";
+      position: absolute;
+      right: calc(100% + 12px);
+      top: 50%;
+      transform: translate(6px, -50%);
+      width: max-content;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .whatsapp-float:hover,
+    .whatsapp-float:focus-visible { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(18, 22, 13, .28); }
+    .whatsapp-float:hover::before,
+    .whatsapp-float:focus-visible::before { opacity: 1; transform: translate(0, -50%); }
+    .whatsapp-float:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
     .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.46); z-index: 20; opacity: 0; pointer-events: none; transition: opacity .2s; }
     .scrim.open { opacity: 1; pointer-events: auto; }
     .drawer {
@@ -296,6 +337,19 @@
     .dialog-inner p { color: var(--muted); line-height: 1.65; }
     .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
 
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+    .auth-btn { min-height: 44px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 6px; }
+    .field input { width: 100%; min-height: 48px; border: 1px solid var(--line); border-radius: 10px; padding: 0 14px; background: var(--bg); color: var(--ink); font: inherit; }
+    .auth-tabs { display: flex; gap: 8px; margin: 4px 0 18px; }
+    .auth-error { color: var(--warn); font-size: 13px; font-weight: 700; min-height: 20px; margin: 0 0 8px; }
+    .dialog-note { margin: 16px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .owned-badge { position: absolute; top: 18px; right: 18px; padding: 8px 10px; background: var(--accent); color: var(--accent-ink); font: 500 11px DM Mono, monospace; border-radius: 7px; letter-spacing: .06em; font-weight: 700; }
+    .my-courses { margin-bottom: 94px; }
+    #confirmList { margin: 6px 0 4px; }
+    #confirmList .cart-row { padding: 12px 0; }
+
     @media (max-width: 780px) {
       .shell { width: min(100% - 26px, 1180px); }
       .topbar { height: 68px; }
@@ -312,6 +366,13 @@
       .course-body { padding: 20px; }
       .path { margin: 70px 0; grid-template-columns: 1fr; gap: 28px; border-radius: 16px; }
       footer { flex-direction: column; }
+      .whatsapp-float {
+        width: 56px;
+        height: 56px;
+        right: max(16px, calc(env(safe-area-inset-right) + 16px));
+        bottom: max(16px, calc(env(safe-area-inset-bottom) + 16px));
+      }
+      .whatsapp-float svg { width: 29px; height: 29px; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
@@ -323,12 +384,16 @@
     <header class="topbar">
       <nav class="nav" aria-label="Main navigation">
         <a href="#courses">Courses</a>
+        <a href="#my-courses">My courses</a>
         <a href="#path">How it works</a>
         <a href="#faq">FAQ</a>
       </nav>
-      <button class="cart-btn" id="openCart" type="button" aria-label="Open basket">
-        Basket <span class="count" id="cartCount">0</span>
-      </button>
+      <div class="topbar-actions">
+        <button class="button auth-btn" id="authBtn" type="button">Log in</button>
+        <button class="cart-btn" id="openCart" type="button" aria-label="Open basket">
+          Basket <span class="count" id="cartCount">0</span>
+        </button>
+      </div>
     </header>
 
     <main>
@@ -387,7 +452,7 @@
             </div>
           </article>
 
-          <article class="course" data-category="infrastructure" data-id="esxi-lab" data-title="VMware ESXi: Build Your First Lab" data-price="349">
+          <article class="course" data-category="infrastructure" data-id="vmware-esxi-lab" data-title="VMware ESXi: Build Your First Lab" data-price="349">
             <div class="cover" aria-hidden="true">
               <svg viewBox="0 0 800 450" role="img" aria-label="Abstract server rack diagram in blue and lime">
                 <rect width="800" height="450" fill="#153D67"/>
@@ -428,7 +493,7 @@
             </div>
           </article>
 
-          <article class="course" data-category="infrastructure" data-id="virtual-stack" data-title="Virtual Infrastructure Essentials" data-price="399">
+          <article class="course" data-category="infrastructure" data-id="virt-infra" data-title="Virtual Infrastructure Essentials" data-price="399">
             <div class="cover" aria-hidden="true">
               <svg viewBox="0 0 800 450" role="img" aria-label="Layered virtual infrastructure blocks in orange and dark blue">
                 <rect width="800" height="450" fill="#F3A43B"/>
@@ -451,6 +516,16 @@
             </div>
           </article>
         </div>
+      </section>
+
+      <section class="my-courses" id="my-courses">
+        <div class="catalog-head">
+          <div>
+            <h2>My courses</h2>
+            <p id="myCoursesSub">Log in to see the courses you own.</p>
+          </div>
+        </div>
+        <div class="course-grid" id="myCoursesGrid"></div>
       </section>
 
       <section class="path" id="path">
@@ -485,6 +560,12 @@
     </footer>
   </div>
 
+  <a class="whatsapp-float" href="https://wa.me/212772453916" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
+    <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <path d="M16.002 3.2c-7.076 0-12.8 5.724-12.8 12.8 0 2.266.59 4.395 1.624 6.245L3.2 28.8l7.006-1.84a12.744 12.744 0 0 0 5.796 1.84c7.076 0 12.798-5.724 12.798-12.8 0-7.076-5.722-12.8-12.798-12.8Zm0 23.436c-2.071 0-4.003-.59-5.64-1.611l-.404-.24-4.156 1.091 1.11-4.05-.264-.416A10.57 10.57 0 0 1 5.366 16c0-5.867 4.77-10.636 10.636-10.636S26.636 10.133 26.636 16s-4.768 10.636-10.634 10.636Zm5.83-7.966c-.319-.16-1.89-.932-2.184-1.038-.293-.107-.506-.16-.72.16-.212.319-.826 1.038-1.012 1.252-.187.213-.373.24-.692.08-.319-.16-1.348-.497-2.567-1.584-.949-.846-1.59-1.89-1.776-2.21-.187-.319-.02-.492.14-.651.144-.144.319-.373.479-.56.16-.186.213-.319.319-.532.107-.213.053-.4-.027-.56-.08-.159-.72-1.73-.986-2.369-.259-.623-.522-.539-.72-.549l-.612-.011c-.213 0-.56.08-.853.4-.293.319-1.118 1.092-1.118 2.663 0 1.57 1.145 3.087 1.304 3.3.16.213 2.252 3.438 5.455 4.82.762.329 1.357.525 1.82.672.765.243 1.462.209 2.013.127.614-.092 1.89-.773 2.157-1.519.266-.746.266-1.385.186-1.519-.08-.133-.293-.213-.612-.373Z"/>
+    </svg>
+  </a>
+
   <div class="scrim" id="scrim"></div>
   <aside class="drawer" id="drawer" aria-label="Shopping basket" aria-hidden="true">
     <div class="drawer-head"><h2>Your basket</h2><button class="icon-btn" id="closeCart" type="button" aria-label="Close basket">×</button></div>
@@ -492,21 +573,52 @@
     <div class="drawer-foot">
       <div class="total"><span>Total</span><strong id="cartTotal">0 MAD</strong></div>
       <button class="button primary checkout" id="checkout" type="button">Continue to checkout</button>
-      <p class="drawer-note">Secure payment is not connected in this frontend preview. You can download an order summary instead.</p>
+      <p class="drawer-note">Demo checkout — log in and your courses unlock instantly. Real payments coming soon.</p>
     </div>
   </aside>
 
   <dialog id="checkoutDialog">
     <div class="dialog-inner">
-      <div class="dialog-top"><h2>Order summary ready</h2><button class="icon-btn" id="closeDialog" type="button" aria-label="Close">×</button></div>
-      <p>This storefront is ready for a payment provider to be connected. For now, download the basket summary as a text file—no payment will be taken.</p>
+      <div class="dialog-top"><h2>Confirm your order</h2><button class="icon-btn" id="closeDialog" type="button" aria-label="Close">×</button></div>
+      <div id="confirmList"></div>
+      <div class="total"><span>Total</span><strong id="confirmTotal">0 MAD</strong></div>
+      <p class="dialog-note" id="checkoutNote">Demo checkout — no real payment is taken. Your courses unlock instantly in your account.</p>
       <div class="dialog-actions">
-        <button class="button primary" id="downloadOrder" type="button">Download order summary</button>
+        <button class="button primary" id="completePurchase" type="button">Complete purchase</button>
         <button class="button" id="backToShop" type="button">Keep browsing</button>
       </div>
     </div>
   </dialog>
 
+  <dialog id="authDialog">
+    <div class="dialog-inner">
+      <div class="dialog-top"><h2 id="authTitle">Log in</h2><button class="icon-btn" id="closeAuth" type="button" aria-label="Close">×</button></div>
+      <div class="auth-tabs" role="group" aria-label="Log in or sign up">
+        <button class="filter active" type="button" data-authtab="login">Log in</button>
+        <button class="filter" type="button" data-authtab="signup">Sign up</button>
+      </div>
+      <form id="authForm">
+        <div class="field" id="nameField" hidden><label for="authName">Full name</label><input id="authName" type="text" autocomplete="name" placeholder="Your name"></div>
+        <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" required autocomplete="email" placeholder="you@example.com"></div>
+        <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="••••••••"></div>
+        <p class="auth-error" id="authError" role="alert"></p>
+        <button class="button primary" type="submit" id="authSubmit" style="width:100%">Log in</button>
+      </form>
+      <p class="dialog-note">Your account is stored securely by Supabase. Demo store — purchases complete instantly.</p>
+    </div>
+  </dialog>
+
+  <dialog id="successDialog">
+    <div class="dialog-inner">
+      <div class="dialog-top"><h2>You're in! 🎉</h2><button class="icon-btn" id="closeSuccess" type="button" aria-label="Close">×</button></div>
+      <p id="successText">Your courses are unlocked and waiting in My courses.</p>
+      <div class="dialog-actions">
+        <button class="button primary" id="goMyCourses" type="button">Go to My courses</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (function () {
       var cart = [];
@@ -516,8 +628,23 @@
       var cartCount = document.getElementById('cartCount');
       var cartTotal = document.getElementById('cartTotal');
       var dialog = document.getElementById('checkoutDialog');
+      var authDialog = document.getElementById('authDialog');
+      var successDialog = document.getElementById('successDialog');
+
+      var sb = window.supabase.createClient(
+        'https://bvjacnthnwvjxglqqtlz.supabase.co',
+        'sb_publishable_0cQsIcvPUA85vncex0C41w_FwveUqan'
+      );
+      var currentUser = null;
+      var ownedIds = {};
+      var pendingCheckout = false;
+      var catalog = {};
+      document.querySelectorAll('.course[data-id]').forEach(function (card) {
+        catalog[card.dataset.id] = { title: card.dataset.title, price: Number(card.dataset.price) };
+      });
 
       function money(value) { return value + ' MAD'; }
+      function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
       function openCart() {
         drawer.classList.add('open'); scrim.classList.add('open');
         drawer.setAttribute('aria-hidden', 'false');
@@ -528,11 +655,25 @@
         drawer.setAttribute('aria-hidden', 'true');
       }
       function updateButtons() {
-        document.querySelectorAll('.course').forEach(function (card) {
+        document.querySelectorAll('.course[data-id]').forEach(function (card) {
           var button = card.querySelector('.add-btn');
-          var added = cart.some(function (item) { return item.id === card.dataset.id; });
-          button.textContent = added ? 'Added ✓' : 'Add to basket';
-          button.classList.toggle('added', added);
+          var id = card.dataset.id;
+          var badge = card.querySelector('.owned-badge');
+          if (ownedIds[id]) {
+            if (!badge) {
+              badge = document.createElement('span');
+              badge.className = 'owned-badge';
+              badge.textContent = 'UNLOCKED';
+              card.querySelector('.cover').appendChild(badge);
+            }
+            button.textContent = 'Owned ✓';
+            button.classList.add('added');
+          } else {
+            if (badge) badge.remove();
+            var added = cart.some(function (item) { return item.id === id; });
+            button.textContent = added ? 'Added ✓' : 'Add to basket';
+            button.classList.toggle('added', added);
+          }
         });
       }
       function renderCart() {
@@ -556,6 +697,11 @@
       document.querySelectorAll('.add-btn').forEach(function (button) {
         button.addEventListener('click', function () {
           var card = button.closest('.course');
+          if (!card || !card.dataset.id) return;
+          if (ownedIds[card.dataset.id]) {
+            document.getElementById('my-courses').scrollIntoView({ behavior: 'smooth' });
+            return;
+          }
           var existing = cart.findIndex(function (item) { return item.id === card.dataset.id; });
           if (existing >= 0) cart.splice(existing, 1);
           else cart.push({ id: card.dataset.id, title: card.dataset.title, price: Number(card.dataset.price) });
@@ -582,23 +728,169 @@
 
       document.getElementById('checkout').addEventListener('click', function () {
         if (!cart.length) { openCart(); return; }
-        closeCart(); dialog.showModal();
+        closeCart();
+        if (!currentUser) {
+          pendingCheckout = true;
+          openAuth('login', 'Log in to complete your purchase.');
+          return;
+        }
+        openConfirm();
       });
       document.getElementById('closeDialog').addEventListener('click', function () { dialog.close(); });
       document.getElementById('backToShop').addEventListener('click', function () { dialog.close(); document.getElementById('courses').scrollIntoView(); });
-      document.getElementById('downloadOrder').addEventListener('click', function () {
-        var total = cart.reduce(function (sum, item) { return sum + item.price; }, 0);
-        var lines = ['TAHATHEGOAT — ORDER SUMMARY', '', 'Courses:'];
-        cart.forEach(function (item, index) { lines.push((index + 1) + '. ' + item.title + ' — ' + money(item.price)); });
-        lines.push('', 'TOTAL: ' + money(total), '', 'This is an order summary only. No payment has been made.');
-        var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-        var url = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.href = url; link.download = 'tahathegoat-order-summary.txt';
-        document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+      document.getElementById('completePurchase').addEventListener('click', async function () {
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Processing…';
+        try {
+          var rows = cart.map(function (item) {
+            return { user_id: currentUser.id, course_id: item.id, amount_mad: item.price, status: 'completed' };
+          });
+          var res = await sb.from('purchases').upsert(rows, { onConflict: 'user_id,course_id' });
+          if (res.error) throw res.error;
+          cart = [];
+          renderCart();
+          dialog.close();
+          await loadOwnership();
+          successDialog.showModal();
+        } catch (err) {
+          document.getElementById('checkoutNote').textContent = 'Could not complete purchase: ' + (err.message || err);
+        }
+        btn.disabled = false;
+        btn.textContent = 'Complete purchase';
       });
 
+      /* ---------- authentication ---------- */
+      var authBtn = document.getElementById('authBtn');
+      var authMode = 'login';
+
+      function setAuthMode(mode, notice) {
+        authMode = mode;
+        document.querySelectorAll('[data-authtab]').forEach(function (b) { b.classList.toggle('active', b.dataset.authtab === mode); });
+        document.getElementById('authTitle').textContent = mode === 'login' ? 'Log in' : 'Create account';
+        document.getElementById('authSubmit').textContent = mode === 'login' ? 'Log in' : 'Sign up';
+        document.getElementById('nameField').hidden = mode !== 'signup';
+        document.getElementById('authError').textContent = notice || '';
+      }
+      function openAuth(mode, notice) { setAuthMode(mode || 'login', notice || ''); authDialog.showModal(); }
+
+      authBtn.addEventListener('click', async function () {
+        if (currentUser) {
+          await sb.auth.signOut();
+        } else {
+          openAuth('login');
+        }
+      });
+      document.querySelectorAll('[data-authtab]').forEach(function (b) {
+        b.addEventListener('click', function () { setAuthMode(b.dataset.authtab); });
+      });
+      document.getElementById('closeAuth').addEventListener('click', function () { authDialog.close(); });
+      document.getElementById('authForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var email = document.getElementById('authEmail').value.trim();
+        var password = document.getElementById('authPassword').value;
+        var name = document.getElementById('authName').value.trim();
+        var errBox = document.getElementById('authError');
+        var submitBtn = document.getElementById('authSubmit');
+        errBox.textContent = '';
+        submitBtn.disabled = true;
+        try {
+          var res;
+          if (authMode === 'login') {
+            res = await sb.auth.signInWithPassword({ email: email, password: password });
+          } else {
+            res = await sb.auth.signUp({ email: email, password: password, options: { data: { full_name: name } } });
+          }
+          if (res.error) throw res.error;
+          if (!res.data.session) {
+            setAuthMode('login', 'Account created — check your email to confirm, then log in.');
+            return;
+          }
+          authDialog.close();
+          document.getElementById('authForm').reset();
+          await refreshAuth();
+          if (pendingCheckout) { pendingCheckout = false; openConfirm(); }
+        } catch (err) {
+          errBox.textContent = err.message || String(err);
+        }
+        submitBtn.disabled = false;
+      });
+
+      document.getElementById('closeSuccess').addEventListener('click', function () { successDialog.close(); });
+      document.getElementById('goMyCourses').addEventListener('click', function () {
+        successDialog.close();
+        document.getElementById('my-courses').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      async function refreshAuth() {
+        try {
+          var res = await sb.auth.getSession();
+          currentUser = res.data.session ? res.data.session.user : null;
+        } catch (err) {
+          currentUser = null;
+        }
+        if (currentUser) {
+          var label = (currentUser.user_metadata && currentUser.user_metadata.full_name)
+            ? currentUser.user_metadata.full_name.split(' ')[0]
+            : currentUser.email;
+          authBtn.textContent = label + ' · Log out';
+        } else {
+          authBtn.textContent = 'Log in';
+        }
+        await loadOwnership();
+      }
+      sb.auth.onAuthStateChange(function () { refreshAuth(); });
+
+      async function loadOwnership() {
+        ownedIds = {};
+        if (currentUser) {
+          try {
+            var res = await sb.from('purchases').select('course_id').eq('user_id', currentUser.id);
+            if (!res.error && res.data) res.data.forEach(function (r) { ownedIds[r.course_id] = true; });
+          } catch (err) { /* offline — catalog still works */ }
+        }
+        updateButtons();
+        renderMyCourses();
+      }
+
+      function openConfirm() {
+        document.getElementById('confirmList').innerHTML = cart.map(function (item) {
+          return '<div class="cart-row"><div><strong>' + escapeHtml(item.title) + '</strong></div><span>' + money(item.price) + '</span></div>';
+        }).join('');
+        document.getElementById('confirmTotal').textContent = money(cart.reduce(function (s, i) { return s + i.price; }, 0));
+        document.getElementById('checkoutNote').textContent = 'Demo checkout — no real payment is taken. Your courses unlock instantly in your account.';
+        dialog.showModal();
+      }
+
+      function renderMyCourses() {
+        var grid = document.getElementById('myCoursesGrid');
+        var sub = document.getElementById('myCoursesSub');
+        if (!currentUser) {
+          sub.textContent = 'Log in to see the courses you own.';
+          grid.innerHTML = '';
+          return;
+        }
+        var ids = Object.keys(ownedIds);
+        if (!ids.length) {
+          sub.textContent = 'No courses yet — pick one from the catalog above.';
+          grid.innerHTML = '';
+          return;
+        }
+        sub.textContent = 'Lifetime access · learn at your own pace.';
+        grid.innerHTML = ids.map(function (id) {
+          var c = catalog[id] || { title: id, price: 0 };
+          return '<article class="course"><div class="course-body">' +
+            '<span class="meta">UNLOCKED · LIFETIME ACCESS</span>' +
+            '<h3>' + escapeHtml(c.title) + '</h3>' +
+            '<p>Your lessons are being prepared. We will email you the moment your course content goes live.</p>' +
+            '<div class="course-foot"><span class="price">Owned</span>' +
+            '<a class="button" href="https://wa.me/212772453916" target="_blank" rel="noopener">Ask about content</a>' +
+            '</div></div></article>';
+        }).join('');
+      }
+
       renderCart();
+      refreshAuth();
     }());
   </script>
 </body>
