@@ -337,6 +337,24 @@
     .dialog-inner p { color: var(--muted); line-height: 1.65; }
     .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
 
+    .course-player { width: min(980px, calc(100% - 28px)); }
+    .course-player .dialog-inner { max-height: 88vh; display: flex; flex-direction: column; }
+    .player-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 0; margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-height: 0; }
+    .player-lessons { border-right: 1px solid var(--line); overflow: auto; background: var(--bg); max-height: 60vh; }
+    .player-lesson { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 14px 16px; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; color: inherit; }
+    .player-lesson:last-child { border-bottom: 0; }
+    .player-lesson.active { background: var(--panel-2); }
+    .player-lesson .tick { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex: none; margin-top: 2px; display: grid; place-items: center; font-size: 12px; color: var(--accent-ink); }
+    .player-lesson.done .tick { background: var(--accent); border-color: var(--accent); }
+    .player-lesson.done .tick::after { content: "✓"; font-weight: 800; }
+    .player-lesson strong { display: block; font-size: 14px; line-height: 1.4; }
+    .player-content { padding: 24px; overflow: auto; max-height: 60vh; }
+    .player-content h3 { margin: 0 0 12px; font-size: 24px; letter-spacing: -.02em; }
+    .lesson-body { white-space: pre-line; line-height: 1.75; }
+    .progress-wrap { margin-top: 14px; }
+    .progress-bar { height: 10px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 999px; transition: width .3s ease; }
+
     .topbar-actions { display: flex; gap: 10px; align-items: center; }
     .auth-btn { min-height: 44px; }
     .field { margin-bottom: 14px; }
@@ -618,6 +636,25 @@
     </div>
   </dialog>
 
+  <dialog id="courseDialog" class="course-player">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <div>
+          <h2 id="playerTitle">Course</h2>
+          <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill" id="playerProgressFill"></div></div>
+            <p class="progress-label" id="playerProgress"></p>
+          </div>
+        </div>
+        <button class="icon-btn" id="closePlayer" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="player-layout">
+        <div class="player-lessons" id="playerLessons"></div>
+        <div class="player-content" id="playerContent"><p style="color:var(--muted)">Select a lesson to begin.</p></div>
+      </div>
+    </div>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (function () {
@@ -882,11 +919,120 @@
           return '<article class="course"><div class="course-body">' +
             '<span class="meta">UNLOCKED · LIFETIME ACCESS</span>' +
             '<h3>' + escapeHtml(c.title) + '</h3>' +
-            '<p>Your lessons are being prepared. We will email you the moment your course content goes live.</p>' +
+            '<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="pf-' + id + '"></div></div>' +
+            '<p class="progress-label" id="pl-' + id + '">Loading progress…</p></div>' +
             '<div class="course-foot"><span class="price">Owned</span>' +
-            '<a class="button" href="https://wa.me/212772453916" target="_blank" rel="noopener">Ask about content</a>' +
+            '<button class="button primary" data-start="' + id + '" type="button">Start learning</button>' +
             '</div></div></article>';
         }).join('');
+        ids.forEach(function (id) { updateCardProgress(id); });
+      }
+
+      /* ---------- course player ---------- */
+      var playerState = { courseId: null, lessons: [], done: {}, activeId: null };
+
+      document.getElementById('myCoursesGrid').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-start]');
+        if (b) openCoursePlayer(b.dataset.start);
+      });
+      document.getElementById('playerLessons').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-lesson]');
+        if (b) openLesson(b.dataset.lesson);
+      });
+      document.getElementById('closePlayer').addEventListener('click', function () {
+        document.getElementById('courseDialog').close();
+      });
+
+      async function openCoursePlayer(courseId) {
+        playerState = { courseId: courseId, lessons: [], done: {}, activeId: null };
+        document.getElementById('playerTitle').textContent = (catalog[courseId] || { title: courseId }).title;
+        document.getElementById('playerLessons').innerHTML = '<p style="padding:16px;color:var(--muted)">Loading lessons…</p>';
+        document.getElementById('playerContent').innerHTML = '';
+        document.getElementById('courseDialog').showModal();
+        try {
+          var lr = await sb.from('lessons').select('id,title,position').eq('course_id', courseId).order('position');
+          var pr = await sb.from('progress').select('lesson_id').eq('user_id', currentUser.id);
+          playerState.lessons = lr.data || [];
+          (pr.data || []).forEach(function (r) { playerState.done[r.lesson_id] = true; });
+        } catch (err) { /* offline — player still opens */ }
+        renderLessonList();
+        updatePlayerProgress();
+        if (playerState.lessons.length) openLesson(playerState.lessons[0].id);
+      }
+
+      function renderLessonList() {
+        var box = document.getElementById('playerLessons');
+        if (!playerState.lessons.length) {
+          box.innerHTML = '<p style="padding:16px;color:var(--muted)">No lessons yet.</p>';
+          return;
+        }
+        box.innerHTML = playerState.lessons.map(function (l) {
+          var cls = 'player-lesson' + (playerState.done[l.id] ? ' done' : '') + (playerState.activeId === l.id ? ' active' : '');
+          return '<button class="' + cls + '" data-lesson="' + l.id + '" type="button"><span class="tick"></span><strong>' + escapeHtml(l.title) + '</strong></button>';
+        }).join('');
+      }
+
+      async function openLesson(lessonId) {
+        playerState.activeId = lessonId;
+        renderLessonList();
+        var box = document.getElementById('playerContent');
+        box.innerHTML = '<p style="color:var(--muted)">Loading…</p>';
+        try {
+          var res = await sb.from('lessons').select('title,content').eq('id', lessonId).single();
+          if (res.error || !res.data) throw res.error || new Error('empty');
+          var done = !!playerState.done[lessonId];
+          box.innerHTML = '<h3>' + escapeHtml(res.data.title) + '</h3>' +
+            '<div class="lesson-body">' + escapeHtml(res.data.content || '') + '</div>' +
+            '<div class="dialog-actions"><button class="button ' + (done ? '' : 'primary') + '" id="toggleDone" type="button">' +
+            (done ? 'Completed ✓ — mark as not done' : 'Mark as complete') + '</button></div>';
+          document.getElementById('toggleDone').addEventListener('click', function () { toggleLesson(lessonId, !done); });
+        } catch (err) {
+          box.innerHTML = '<p>Could not load this lesson. Check your connection and try again.</p>';
+        }
+      }
+
+      async function toggleLesson(lessonId, complete) {
+        try {
+          if (complete) {
+            await sb.from('progress').upsert(
+              { user_id: currentUser.id, lesson_id: lessonId, completed: true, completed_at: new Date().toISOString() },
+              { onConflict: 'user_id,lesson_id' }
+            );
+            playerState.done[lessonId] = true;
+          } else {
+            await sb.from('progress').delete().eq('user_id', currentUser.id).eq('lesson_id', lessonId);
+            delete playerState.done[lessonId];
+          }
+        } catch (err) { /* keep UI responsive even if the write fails */ }
+        renderLessonList();
+        updatePlayerProgress();
+        openLesson(lessonId);
+        updateCardProgress(playerState.courseId);
+      }
+
+      function updatePlayerProgress() {
+        var total = playerState.lessons.length;
+        var done = playerState.lessons.filter(function (l) { return playerState.done[l.id]; }).length;
+        var pct = total ? Math.round(done / total * 100) : 0;
+        document.getElementById('playerProgressFill').style.width = pct + '%';
+        document.getElementById('playerProgress').textContent = done + ' of ' + total + ' lessons complete · ' + pct + '%';
+      }
+
+      async function updateCardProgress(courseId) {
+        var total = 0, done = 0;
+        try {
+          var lr = await sb.from('lessons').select('id').eq('course_id', courseId);
+          var pr = await sb.from('progress').select('lesson_id').eq('user_id', currentUser.id);
+          var doneIds = {};
+          (pr.data || []).forEach(function (r) { doneIds[r.lesson_id] = true; });
+          total = (lr.data || []).length;
+          done = (lr.data || []).filter(function (l) { return doneIds[l.id]; }).length;
+        } catch (err) { /* offline */ }
+        var pct = total ? Math.round(done / total * 100) : 0;
+        var fill = document.getElementById('pf-' + courseId);
+        var label = document.getElementById('pl-' + courseId);
+        if (fill) fill.style.width = pct + '%';
+        if (label) label.textContent = total ? (done + ' of ' + total + ' lessons complete') : 'No lessons yet';
       }
 
       renderCart();
